@@ -13,7 +13,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
+
         <Border Grid.Row="0" Background="AntiqueWhite" Padding="30">
             <StackPanel>
                 <TextBlock Text="OTHELLO SETUP" 
@@ -28,9 +28,8 @@
             </StackPanel>
         </Border>
 
-        <!-- Player Input Section -->
         <StackPanel Grid.Row="1" Margin="60,40" VerticalAlignment="Center">
-            <!-- Player 1 -->
+
             <Border Background="blue" Padding="30" Margin="0,0,0,30">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20">
@@ -52,7 +51,7 @@
                 </StackPanel>
             </Border>
 
-            <!-- Player 2 -->
+
             <Border Background="DarkOrange" Padding="30">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20">
@@ -77,7 +76,6 @@
             </Border>
         </StackPanel>
 
-        <!-- Buttons -->
         <Border Grid.Row="2" Background="AntiqueWhite" Padding="30">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <Button x:Name="StartGameButton" 

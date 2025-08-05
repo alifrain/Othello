@@ -87,14 +87,12 @@
 			</Grid>
 		</Border>
 
-		<!-- Game Board Section -->
 		<Grid Grid.Row="1" Background="AntiqueWhite">
 			<Grid.RowDefinitions>
 				<RowDefinition Height="Auto"/>
 				<RowDefinition Height="*"/>
 			</Grid.RowDefinitions>
 
-			<!-- Current Player Display -->
 			<Border Grid.Row="0" Background="Blue" Margin="0,0,0,30"
                     Padding="15">
 				<StackPanel>
@@ -129,8 +127,6 @@
                         Background="#F39C12" Foreground="White"
                         Padding="15,8" Margin="5" FontSize="14" FontWeight="Bold"
                         BorderThickness="0"/>
-
-
 
 				<Button x:Name="ShowRulesButton" Content="Rules"
                         Click="ShowRulesButton_Click"

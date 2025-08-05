@@ -303,7 +303,6 @@ namespace OthelloWPF
             OnGameEnded?.Invoke(message);
         }
 
-        // Helper methods
         private bool IsValidPosition(int row, int col)
         {
             return row >= 0 && row < 8 && col >= 0 && col < 8;
@@ -316,7 +315,6 @@ namespace OthelloWPF
 
         private bool IsGameOver()
         {
-            // Game is over if no valid moves for both players or board is full
             foreach (var playerPair in _players)
             {
                 var validMoves = GetValidMoves(_board, new Dictionary<IPlayer, IPiece> { { playerPair.Key, playerPair.Value } });

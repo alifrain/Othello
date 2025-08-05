@@ -21,7 +21,6 @@ namespace OthelloWPF
 
         private void InitializeGame()
         {
-            // Show player name dialog
             var dialog = new PlayerNameDialog();
             if (dialog.ShowDialog() == true)
             {
@@ -46,7 +45,6 @@ namespace OthelloWPF
             }
             else
             {
-                // Default players if dialog is cancelled
                 var player1 = new Player("Player 1");
                 var player2 = new Player("Player 2");
                 var blackPiece = new Piece(ColorType.Black);
@@ -72,7 +70,6 @@ namespace OthelloWPF
             _boardButtons = new Button[BOARD_SIZE, BOARD_SIZE];
             GameBoardGrid.Children.Clear();
 
-            // Create grid rows and columns
             GameBoardGrid.RowDefinitions.Clear();
             GameBoardGrid.ColumnDefinitions.Clear();
 
@@ -89,7 +86,7 @@ namespace OthelloWPF
                     var button = new Button
                     {
                         Style = (Style)FindResource("BoardCellStyle"),
-                        Content = new Grid(), // Container for the piece
+                        Content = new Grid(), 
                         Tag = new Position(row, col)
                     };
 
@@ -147,7 +144,7 @@ namespace OthelloWPF
 
                     if (_gameController.IsHighlightedPosition(row, col))
                     {
-                        button.Background = new SolidColorBrush(Color.FromRgb(144, 238, 144)); 
+                        button.Background = new SolidColorBrush(Color.FromRgb(144, 238, 144));
 
                         var indicator = new Ellipse
                         {
@@ -160,7 +157,7 @@ namespace OthelloWPF
                     }
                     else
                     {
-                        button.Background = new SolidColorBrush(Color.FromRgb(34, 139, 34)); // Forest green
+                        button.Background = new SolidColorBrush(Color.FromRgb(34, 139, 34));
                     }
                 }
             }
@@ -188,7 +185,6 @@ namespace OthelloWPF
 
         private void OnValidMovesChanged(System.Collections.Generic.List<Position> validMoves)
         {
-            // Update board highlighting - this is handled in UpdateBoardDisplay
             UpdateBoardDisplay();
         }
 
@@ -227,7 +223,6 @@ namespace OthelloWPF
             var dialog = new PlayerNameDialog();
             if (dialog.ShowDialog() == true)
             {
-                // Create new game controller with new players
                 var player1 = new Player(dialog.Player1Name);
                 var player2 = new Player(dialog.Player2Name);
                 var blackPiece = new Piece(ColorType.Black);
@@ -235,14 +230,12 @@ namespace OthelloWPF
 
                 _gameController = new GameController(player1, player2, blackPiece, whitePiece);
 
-                // Resubscribe to events
                 _gameController.OnBoardUpdated += UpdateBoardDisplay;
                 _gameController.OnGameEnded += OnGameEnded;
                 _gameController.OnTurnChanged += OnTurnChanged;
                 _gameController.OnValidMovesChanged += OnValidMovesChanged;
                 _gameController.OnMessageChanged += OnMessageChanged;
 
-                // Update UI
                 Player1Name.Text = player1.UserName;
                 Player2Name.Text = player2.UserName;
 
