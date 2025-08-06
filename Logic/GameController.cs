@@ -326,11 +326,6 @@ namespace OthelloWPF
             return new Dictionary<IPlayer, IPiece> { { opponent, _players[opponent] } };
         }
 
-        public Dictionary<IPlayer, IPiece> GetOpponentType(Dictionary<IPlayer, IPiece> player)
-        {
-            return GetOpponent(player);
-        }
-
         public IBoard GetBoard()
         {
             return _board;
