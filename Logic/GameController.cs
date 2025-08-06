@@ -135,31 +135,51 @@ namespace OthelloWPF
             return true;
         }
 
+        public void SwitchTurn()
+        {
+            _currentPlayer = _players.Keys.First(p => p != _currentPlayer);
+            OnPropertyChanged(nameof(CurrentPlayer));
+        }
+
+        private bool IsGameOver()
+        {
+            foreach (var playerPair in _players)
+            {
+                var validMoves = GetValidMoves(_board, new Dictionary<IPlayer, IPiece> { { playerPair.Key, playerPair.Value } });
+                if (validMoves.Count > 0)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        public void EndGame()
+        {
+            _gameEnded = true;
+            UpdateScore();
+
+            var winner = _players.Keys.OrderByDescending(p => p.Score).First();
+            var loser = _players.Keys.OrderBy(p => p.Score).First();
+
+            string message;
+            if (winner.Score == loser.Score)
+            {
+                message = $"Game ended in a tie! Both players have {winner.Score} pieces.";
+                CurrentMessage = "It's a TIE!";
+            }
+            else
+            {
+                message = $"Game Over! Winner: {winner.UserName} with {winner.Score} pieces! Final Score: {winner.UserName} {winner.Score} - {loser.Score} {loser.UserName}";
+                CurrentMessage = $" WINNER: {winner.UserName}!";
+            }
+
+            OnPropertyChanged(nameof(GameEnded));
+            OnGameEnded?.Invoke(message);
+        }
+
         public bool IsValidMove(int row, int col)
         {
             return _validMoves.Contains(new Position(row, col));
-        }
-
-        public void UpdateScore()
-        {
-            foreach (var player in _players.Keys)
-            {
-                int count = 0;
-                for (int row = 0; row < 8; row++)
-                {
-                    for (int col = 0; col < 8; col++)
-                    {
-                        if (_board.Grid[row, col].Color == _players[player].Color)
-                        {
-                            count++;
-                        }
-                    }
-                }
-                player.Score = count;
-            }
-
-            OnPropertyChanged(nameof(Player1));
-            OnPropertyChanged(nameof(Player2));
         }
 
         private void UpdateValidMoves()
@@ -221,13 +241,6 @@ namespace OthelloWPF
             return flippedPositions;
         }
 
-        public Dictionary<IPlayer, IPiece> GetOpponent(Dictionary<IPlayer, IPiece> player)
-        {
-            var currentPlayerKey = player.Keys.First();
-            var opponent = _players.Keys.First(p => p != currentPlayerKey);
-            return new Dictionary<IPlayer, IPiece> { { opponent, _players[opponent] } };
-        }
-
         public void ApplyMove(Position pos, Dictionary<IPlayer, IPiece> player)
         {
             var playerPiece = player.Values.First();
@@ -241,15 +254,57 @@ namespace OthelloWPF
             }
         }
 
+        public void UpdateScore()
+        {
+            foreach (var player in _players.Keys)
+            {
+                int count = 0;
+                for (int row = 0; row < 8; row++)
+                {
+                    for (int col = 0; col < 8; col++)
+                    {
+                        if (_board.Grid[row, col].Color == _players[player].Color)
+                        {
+                            count++;
+                        }
+                    }
+                }
+                player.Score = count;
+            }
+
+            OnPropertyChanged(nameof(Player1));
+            OnPropertyChanged(nameof(Player2));
+        }
+
+        public ColorType GetPieceColorAt(int row, int col)
+        {
+            if (IsValidPosition(row, col))
+            {
+                return _board.Grid[row, col].Color;
+            }
+            return ColorType.None;
+        }
+
+        public ColorType GetCurrentPlayerColor()
+        {
+            return _players[_currentPlayer].Color;
+        }
+
+        public bool IsHighlightedPosition(int row, int col)
+        {
+            return _validMoves.Contains(new Position(row, col));
+        }
+
+        public Dictionary<IPlayer, IPiece> GetOpponent(Dictionary<IPlayer, IPiece> player)
+        {
+            var currentPlayerKey = player.Keys.First();
+            var opponent = _players.Keys.First(p => p != currentPlayerKey);
+            return new Dictionary<IPlayer, IPiece> { { opponent, _players[opponent] } };
+        }
+
         public Dictionary<IPlayer, IPiece> GetOpponentType(Dictionary<IPlayer, IPiece> player)
         {
             return GetOpponent(player);
-        }
-
-        public void SwitchTurn()
-        {
-            _currentPlayer = _players.Keys.First(p => p != _currentPlayer);
-            OnPropertyChanged(nameof(CurrentPlayer));
         }
 
         public IBoard GetBoard()
@@ -278,30 +333,6 @@ namespace OthelloWPF
             OnBoardUpdated?.Invoke();
         }
 
-        public void EndGame()
-        {
-            _gameEnded = true;
-            UpdateScore();
-
-            var winner = _players.Keys.OrderByDescending(p => p.Score).First();
-            var loser = _players.Keys.OrderBy(p => p.Score).First();
-
-            string message;
-            if (winner.Score == loser.Score)
-            {
-                message = $"Game ended in a tie! Both players have {winner.Score} pieces.";
-                CurrentMessage = "It's a TIE!";
-            }
-            else
-            {
-                message = $"Game Over! Winner: {winner.UserName} with {winner.Score} pieces! Final Score: {winner.UserName} {winner.Score} - {loser.Score} {loser.UserName}";
-                CurrentMessage = $" WINNER: {winner.UserName}!";
-            }
-
-            OnPropertyChanged(nameof(GameEnded));
-            OnGameEnded?.Invoke(message);
-        }
-
         private bool IsValidPosition(int row, int col)
         {
             return row >= 0 && row < 8 && col >= 0 && col < 8;
@@ -312,41 +343,9 @@ namespace OthelloWPF
             return color == ColorType.Black ? ColorType.White : ColorType.Black;
         }
 
-        private bool IsGameOver()
-        {
-            foreach (var playerPair in _players)
-            {
-                var validMoves = GetValidMoves(_board, new Dictionary<IPlayer, IPiece> { { playerPair.Key, playerPair.Value } });
-                if (validMoves.Count > 0)
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        public ColorType GetPieceColorAt(int row, int col)
-        {
-            if (IsValidPosition(row, col))
-            {
-                return _board.Grid[row, col].Color;
-            }
-            return ColorType.None;
-        }
-
-        public ColorType GetCurrentPlayerColor()
-        {
-            return _players[_currentPlayer].Color;
-        }
-
-        public bool IsHighlightedPosition(int row, int col)
-        {
-            return _validMoves.Contains(new Position(row, col));
         }
     }
 }
