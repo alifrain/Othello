@@ -87,7 +87,7 @@ namespace OthelloWPF
             OnPropertyChanged(nameof(GameEnded));
         }
 
-        public bool TryMakeMove(int row, int col)
+        public bool MakeMove(int row, int col)
         {
             if (_gameEnded || !_gameStarted)
                 return false;

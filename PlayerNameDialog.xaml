@@ -79,7 +79,7 @@
         <Border Grid.Row="2" Background="AntiqueWhite" Padding="30">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <Button x:Name="StartGameButton" 
-                        Content="🚀 Start Game" 
+                        Content="Start Game" 
                         Click="StartGameButton_Click"
                         Background="#27AE60" 
                         Foreground="White" 
@@ -91,7 +91,7 @@
                         MinWidth="150"/>
 
                 <Button x:Name="CancelButton" 
-                        Content="❌ Cancel" 
+                        Content="Cancel" 
                         Click="CancelButton_Click"
                         Background="#E74C3C" 
                         Foreground="White" 

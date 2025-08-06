@@ -103,7 +103,7 @@ namespace OthelloWPF
         {
             if (sender is Button button && button.Tag is Position pos)
             {
-                _gameController.TryMakeMove(pos.Row, pos.Col);
+                _gameController.MakeMove(pos.Row, pos.Col);
             }
         }
         private void UpdateBoardDisplay()

@@ -49,7 +49,7 @@
 		</Grid.RowDefinitions>
 
 		<!-- Header Section -->
-		<Border Grid.Row="0" Background="#2C3E50" Padding="20">
+		<Border Grid.Row="0" Background="DarkBlue" Padding="20">
 			<Grid>
 				<Grid.ColumnDefinitions>
 					<ColumnDefinition Width="*"/>
@@ -93,7 +93,7 @@
 				<RowDefinition Height="*"/>
 			</Grid.RowDefinitions>
 
-			<Border Grid.Row="0" Background="Blue" Margin="0,0,0,30"
+			<Border Grid.Row="0" Background="DarkViolet" Margin="0,0,0,30"
                     Padding="15">
 				<StackPanel>
 					<TextBlock x:Name="CurrentPlayerText" Text="Player 1's Turn"
