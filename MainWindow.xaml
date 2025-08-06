@@ -4,9 +4,8 @@
         Title="Othello Game" Height="700" Width="800"
         WindowStartupLocation="CenterScreen">
 
-	<Window.Resources>
-		<!-- Button Style for Game Board -->
-		<Style x:Key="BoardCellStyle" TargetType="Button">
+    <Window.Resources>
+        <Style x:Key="BoardCellStyle" TargetType="Button">
 			<Setter Property="Width" Value="60"/>
 			<Setter Property="Height" Value="60"/>
 			<Setter Property="Margin" Value="1"/>
@@ -32,7 +31,6 @@
 			</Setter>
 		</Style>
 
-		<!-- Style for Game Pieces -->
 		<Style x:Key="GamePieceStyle" TargetType="Ellipse">
 			<Setter Property="Width" Value="45"/>
 			<Setter Property="Height" Value="45"/>
@@ -48,7 +46,7 @@
 			<RowDefinition Height="Auto"/>
 		</Grid.RowDefinitions>
 
-		<!-- Header Section -->
+
 		<Border Grid.Row="0" Background="DarkBlue" Padding="20">
 			<Grid>
 				<Grid.ColumnDefinitions>
@@ -57,7 +55,6 @@
 					<ColumnDefinition Width="*"/>
 				</Grid.ColumnDefinitions>
 
-				<!-- Player 1 Info -->
 				<StackPanel Grid.Column="0" HorizontalAlignment="Left">
 					<TextBlock x:Name="Player1Name" Text="Player 1"
                              Foreground="White" FontSize="16" FontWeight="Bold"/>
@@ -68,12 +65,11 @@
 					</StackPanel>
 				</StackPanel>
 
-				<!-- Game Title -->
+
 				<TextBlock Grid.Column="1" Text=" OTHELLO "
                          HorizontalAlignment="Center" VerticalAlignment="Center"
                          Foreground="White" FontSize="24" FontWeight="Bold"/>
 
-				<!-- Player 2 Info -->
 				<StackPanel Grid.Column="2" HorizontalAlignment="Right">
 					<TextBlock x:Name="Player2Name" Text="Player 2"
                              Foreground="White" FontSize="16" FontWeight="Bold"/>
@@ -105,12 +101,11 @@
 				</StackPanel>
 			</Border>
 
-			<!-- Game Board -->
 			<Grid x:Name="GameBoardGrid" Grid.Row="1"
                   Width="520" Height="520"
                   HorizontalAlignment="Center" VerticalAlignment="Center"
                   Background="AntiqueWhite">
-				<!-- Board cells will be created programmatically -->
+
 			</Grid>
 		</Grid>
 
