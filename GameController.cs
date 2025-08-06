@@ -18,8 +18,6 @@ namespace OthelloWPF
         public event Action? OnBoardUpdated;
         public event Action<string>? OnGameEnded;
         public event Action<string>? OnTurnChanged;
-        public event Action<List<Position>>? OnValidMovesChanged;
-        public event Action<string>? OnMessageChanged;
 
         public IBoard Board => _board;
         public IPlayer CurrentPlayer => _currentPlayer;
@@ -37,7 +35,6 @@ namespace OthelloWPF
             {
                 _currentMessage = value;
                 OnPropertyChanged(nameof(CurrentMessage));
-                OnMessageChanged?.Invoke(value);
             }
         }
 
@@ -49,7 +46,7 @@ namespace OthelloWPF
             {
                 _validMoves = value;
                 OnPropertyChanged(nameof(ValidMoves));
-                OnValidMovesChanged?.Invoke(value);
+             
             }
         }
 
@@ -84,7 +81,7 @@ namespace OthelloWPF
 
             CurrentMessage = $"Game started! {_currentPlayer.UserName}'s turn";
             OnTurnChanged?.Invoke($"{_currentPlayer.UserName}'s turn ({_players[_currentPlayer].Color})");
-            OnBoardUpdated?.Invoke();
+            OnBoardUpdated?.Invoke(); 
 
             OnPropertyChanged(nameof(GameStarted));
             OnPropertyChanged(nameof(GameEnded));
@@ -106,7 +103,7 @@ namespace OthelloWPF
             ApplyMove(position, new Dictionary<IPlayer, IPiece> { { _currentPlayer, _players[_currentPlayer] } });
 
             UpdateScore();
-            OnBoardUpdated?.Invoke();
+            OnBoardUpdated?.Invoke(); 
 
             if (IsGameOver())
             {
@@ -115,13 +112,13 @@ namespace OthelloWPF
             }
 
             SwitchTurn();
-            UpdateValidMoves();
+            UpdateValidMoves(); 
 
             if (_validMoves.Count == 0)
             {
                 CurrentMessage = $"No valid moves for {_currentPlayer.UserName}. Skipping turn.";
                 SwitchTurn();
-                UpdateValidMoves();
+                UpdateValidMoves(); 
 
                 if (_validMoves.Count == 0)
                 {
@@ -132,6 +129,8 @@ namespace OthelloWPF
 
             CurrentMessage = $"{_currentPlayer.UserName}'s turn";
             OnTurnChanged?.Invoke($"{_currentPlayer.UserName}'s turn ({_players[_currentPlayer].Color})");
+
+            OnBoardUpdated?.Invoke();
 
             return true;
         }

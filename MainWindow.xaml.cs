@@ -34,8 +34,6 @@ namespace OthelloWPF
                 _gameController.OnBoardUpdated += UpdateBoardDisplay;
                 _gameController.OnGameEnded += OnGameEnded;
                 _gameController.OnTurnChanged += OnTurnChanged;
-                _gameController.OnValidMovesChanged += OnValidMovesChanged;
-                _gameController.OnMessageChanged += OnMessageChanged;
 
                 Player1Name.Text = player1.UserName;
                 Player2Name.Text = player2.UserName;
@@ -55,8 +53,6 @@ namespace OthelloWPF
                 _gameController.OnBoardUpdated += UpdateBoardDisplay;
                 _gameController.OnGameEnded += OnGameEnded;
                 _gameController.OnTurnChanged += OnTurnChanged;
-                _gameController.OnValidMovesChanged += OnValidMovesChanged;
-                _gameController.OnMessageChanged += OnMessageChanged;
 
                 Player1Name.Text = "Player 1";
                 Player2Name.Text = "Player 2";
@@ -86,7 +82,7 @@ namespace OthelloWPF
                     var button = new Button
                     {
                         Style = (Style)FindResource("BoardCellStyle"),
-                        Content = new Grid(), 
+                        Content = new Grid(), // Container for the piece
                         Tag = new Position(row, col)
                     };
 
@@ -110,7 +106,6 @@ namespace OthelloWPF
                 _gameController.TryMakeMove(pos.Row, pos.Col);
             }
         }
-
         private void UpdateBoardDisplay()
         {
             if (_gameController == null || _boardButtons == null) return;
@@ -157,12 +152,13 @@ namespace OthelloWPF
                     }
                     else
                     {
-                        button.Background = new SolidColorBrush(Color.FromRgb(34, 139, 34));
+                        button.Background = new SolidColorBrush(Color.FromRgb(34, 139, 34)); // Forest green
                     }
                 }
             }
 
             UpdateScoreDisplay();
+            CurrentMessage.Text = _gameController.CurrentMessage;
         }
 
         private void UpdateScoreDisplay()
@@ -181,16 +177,6 @@ namespace OthelloWPF
         private void OnTurnChanged(string turnInfo)
         {
             CurrentPlayerText.Text = turnInfo;
-        }
-
-        private void OnValidMovesChanged(System.Collections.Generic.List<Position> validMoves)
-        {
-            UpdateBoardDisplay();
-        }
-
-        private void OnMessageChanged(string message)
-        {
-            CurrentMessage.Text = message;
         }
 
         private void NewGameButton_Click(object sender, RoutedEventArgs e)
@@ -223,6 +209,7 @@ namespace OthelloWPF
             var dialog = new PlayerNameDialog();
             if (dialog.ShowDialog() == true)
             {
+
                 var player1 = new Player(dialog.Player1Name);
                 var player2 = new Player(dialog.Player2Name);
                 var blackPiece = new Piece(ColorType.Black);
@@ -233,8 +220,7 @@ namespace OthelloWPF
                 _gameController.OnBoardUpdated += UpdateBoardDisplay;
                 _gameController.OnGameEnded += OnGameEnded;
                 _gameController.OnTurnChanged += OnTurnChanged;
-                _gameController.OnValidMovesChanged += OnValidMovesChanged;
-                _gameController.OnMessageChanged += OnMessageChanged;
+
 
                 Player1Name.Text = player1.UserName;
                 Player2Name.Text = player2.UserName;
