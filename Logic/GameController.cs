@@ -71,6 +71,7 @@ namespace OthelloWPF
             _gameEnded = false;
         }
 
+        // Game Lifecycle
         public void StartGame()
         {
             _gameStarted = true;
@@ -176,7 +177,28 @@ namespace OthelloWPF
             OnPropertyChanged(nameof(GameEnded));
             OnGameEnded?.Invoke(message);
         }
+        public void ResetBoard()
+        {
+            _board = new Board();
+            foreach (var player in _players.Keys)
+            {
+                player.Score = 2;
+            }
+            _currentPlayer = _players.Keys.First();
+            _gameStarted = false;
+            _gameEnded = false;
+            _validMoves.Clear();
+            CurrentMessage = "Game reset. Click 'New Game' to start.";
 
+            OnPropertyChanged(nameof(GameStarted));
+            OnPropertyChanged(nameof(GameEnded));
+            OnPropertyChanged(nameof(CurrentPlayer));
+            OnPropertyChanged(nameof(Player1));
+            OnPropertyChanged(nameof(Player2));
+            OnBoardUpdated?.Invoke();
+        }
+
+        // Move Logic
         public bool IsValidMove(int row, int col)
         {
             return _validMoves.Contains(new Position(row, col));
@@ -254,6 +276,7 @@ namespace OthelloWPF
             }
         }
 
+        // Score State
         public void UpdateScore()
         {
             foreach (var player in _players.Keys)
@@ -295,6 +318,7 @@ namespace OthelloWPF
             return _validMoves.Contains(new Position(row, col));
         }
 
+        // Utility Methods
         public Dictionary<IPlayer, IPiece> GetOpponent(Dictionary<IPlayer, IPiece> player)
         {
             var currentPlayerKey = player.Keys.First();
@@ -312,27 +336,6 @@ namespace OthelloWPF
             return _board;
         }
 
-        public void ResetBoard()
-        {
-            _board = new Board();
-            foreach (var player in _players.Keys)
-            {
-                player.Score = 2;
-            }
-            _currentPlayer = _players.Keys.First();
-            _gameStarted = false;
-            _gameEnded = false;
-            _validMoves.Clear();
-            CurrentMessage = "Game reset. Click 'New Game' to start.";
-
-            OnPropertyChanged(nameof(GameStarted));
-            OnPropertyChanged(nameof(GameEnded));
-            OnPropertyChanged(nameof(CurrentPlayer));
-            OnPropertyChanged(nameof(Player1));
-            OnPropertyChanged(nameof(Player2));
-            OnBoardUpdated?.Invoke();
-        }
-
         private bool IsValidPosition(int row, int col)
         {
             return row >= 0 && row < 8 && col >= 0 && col < 8;
@@ -343,6 +346,7 @@ namespace OthelloWPF
             return color == ColorType.Black ? ColorType.White : ColorType.Black;
         }
 
+        // Event
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
