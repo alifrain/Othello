@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 
 namespace OthelloWPF
@@ -28,20 +29,19 @@ namespace OthelloWPF
                 var player2 = new Player(dialog.Player2Name);
                 var blackPiece = new Piece(ColorType.Black);
                 var whitePiece = new Piece(ColorType.White);
+                var board = new Board();
 
-                _gameController = new GameController(player1, player2, blackPiece, whitePiece);
-                _gameController.Board.BoardChanged += UpdateBoardDisplay;
-                _gameController.PropertyChanged += GameController_PropertyChanged;
+                _gameController = new GameController(player1, player2, blackPiece, whitePiece, board);
                 _gameController.OnGameEnded += OnGameEnded;
-                _gameController.OnTurnChanged += OnTurnChanged;
 
                 this.DataContext = _gameController;
 
                 Player1Name.Text = player1.UserName;
                 Player2Name.Text = player2.UserName;
 
-                CurrentPlayerText.Text = $"{player1.UserName}'s Turn";
-                CurrentMessage.Text = "Click 'New Game' to start playing!";
+                // Get initial game state and render UI
+                var initialState = _gameController.GetCurrentGameState();
+                RenderGameState(initialState);
             }
             else
             {
@@ -49,20 +49,19 @@ namespace OthelloWPF
                 var player2 = new Player("Player 2");
                 var blackPiece = new Piece(ColorType.Black);
                 var whitePiece = new Piece(ColorType.White);
+                var board = new Board();
 
-                _gameController = new GameController(player1, player2, blackPiece, whitePiece);
-
-                _gameController.Board.BoardChanged += UpdateBoardDisplay;
-                _gameController.PropertyChanged += GameController_PropertyChanged;
+                _gameController = new GameController(player1, player2, blackPiece, whitePiece, board);
                 _gameController.OnGameEnded += OnGameEnded;
-                _gameController.OnTurnChanged += OnTurnChanged;
 
                 this.DataContext = _gameController;
 
                 Player1Name.Text = "Player 1";
                 Player2Name.Text = "Player 2";
-                CurrentPlayerText.Text = "Player 1's Turn";
-                CurrentMessage.Text = "Click 'New Game' to start playing!";
+
+                // Get initial game state and render UI
+                var initialState = _gameController.GetCurrentGameState();
+                RenderGameState(initialState);
             }
         }
 
@@ -100,30 +99,33 @@ namespace OthelloWPF
                     _boardButtons[row, col] = button;
                 }
             }
-
-            UpdateBoardDisplay();
         }
 
         private void BoardCell_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.Tag is Position pos)
             {
-                _gameController.MakeMove(pos.Row, pos.Col);
+                var moveResult = _gameController.ProcessMove(pos.Row, pos.Col);
+                RenderGameState(moveResult);
             }
         }
 
-        private void GameController_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        // method untuk merender game state untuk mengupdate UI
+        private void RenderGameState(GameMoveResult gameState)
         {
-            if (e.PropertyName == nameof(_gameController.ValidMoves))
-            {
-                UpdateBoardDisplay();
-            }
+            if (gameState == null || _boardButtons == null) return;
+
+            RenderBoard(gameState.Board); // uses array board from gc
+
+            RenderValidMoves(gameState.ValidMoves); // uses list of valid moves from gc
+
+            UpdateUIText(gameState); // updates current player and message
+
+            UpdateScoreDisplay(); // updates player scores
         }
 
-        private void UpdateBoardDisplay()
+        private void RenderBoard(ColorType[,] boardState)
         {
-            if (_gameController?.Board == null || _boardButtons == null) return;
-
             for (int row = 0; row < BOARD_SIZE; row++)
             {
                 for (int col = 0; col < BOARD_SIZE; col++)
@@ -132,17 +134,20 @@ namespace OthelloWPF
                     var grid = (Grid)button.Content;
                     grid.Children.Clear();
 
-                    var piece = _gameController.Board.Grid[row, col];
+                    // Reset background to default
+                    button.Background = new SolidColorBrush(Color.FromRgb(34, 139, 34));
 
-                    if (piece.Color != ColorType.None)
+                    // Render piece based on board state
+                    var pieceColor = boardState[row, col];
+                    if (pieceColor != ColorType.None)
                     {
                         var pieceEllipse = new Ellipse
                         {
                             Style = (Style)FindResource("GamePieceStyle"),
-                            Fill = piece.Color == ColorType.Black ? Brushes.Black : Brushes.White
+                            Fill = pieceColor == ColorType.Black ? Brushes.Black : Brushes.White
                         };
 
-                        if (piece.Color == ColorType.White)
+                        if (pieceColor == ColorType.White)
                         {
                             pieceEllipse.Stroke = Brushes.Black;
                             pieceEllipse.StrokeThickness = 2;
@@ -150,28 +155,41 @@ namespace OthelloWPF
 
                         grid.Children.Add(pieceEllipse);
                     }
-
-                    if (_gameController.IsHighlightedPosition(row, col))
-                    {
-                        button.Background = new SolidColorBrush(Color.FromRgb(144, 238, 144));
-
-                        var indicator = new Ellipse
-                        {
-                            Width = 15,
-                            Height = 15,
-                            Fill = new SolidColorBrush(Color.FromRgb(0, 100, 0)),
-                            Opacity = 0.7
-                        };
-                        grid.Children.Add(indicator);
-                    }
-                    else
-                    {
-                        button.Background = new SolidColorBrush(Color.FromRgb(34, 139, 34));
-                    }
                 }
             }
+        }
 
-            UpdateScoreDisplay();
+        private void RenderValidMoves(System.Collections.Generic.List<Position> validMoves)
+        {
+            foreach (var move in validMoves)
+            {
+                var button = _boardButtons[move.Row, move.Col];
+                var grid = (Grid)button.Content;
+
+                // Highlight valid move positions
+                button.Background = new SolidColorBrush(Color.FromRgb(144, 238, 144));
+
+                // Add indicator dot
+                var indicator = new Ellipse
+                {
+                    Width = 15,
+                    Height = 15,
+                    Fill = new SolidColorBrush(Color.FromRgb(0, 100, 0)),
+                    Opacity = 0.7
+                };
+                grid.Children.Add(indicator);
+            }
+        }
+
+        private void UpdateUIText(GameMoveResult gameState)
+        {
+            CurrentMessage.Text = gameState.Message;
+
+            if (!gameState.GameEnded && gameState.CurrentPlayer != null)
+            {
+                var playerColor = _gameController.GetCurrentPlayerColor();
+                CurrentPlayerText.Text = $"{gameState.CurrentPlayer.UserName}'s turn ({playerColor})";
+            }
         }
 
         private void UpdateScoreDisplay()
@@ -184,18 +202,17 @@ namespace OthelloWPF
 
         private void OnGameEnded(string message)
         {
-            MessageBox.Show(message, "Game Over", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
+            CurrentPlayerText.Foreground = Brushes.White;
+            CurrentMessage.Foreground = Brushes.White;
 
-        private void OnTurnChanged(string turnInfo)
-        {
-            CurrentPlayerText.Text = turnInfo;
+            MessageBox.Show(message, "Game Over", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void NewGameButton_Click(object sender, RoutedEventArgs e)
         {
-            _gameController.ResetBoard();
-            _gameController.StartGame();
+            // Get game state after starting new game and render it
+            var newGameState = _gameController.StartGame();
+            RenderGameState(newGameState);
         }
 
         private void ExitButton_Click(object sender, RoutedEventArgs e)
@@ -211,8 +228,13 @@ namespace OthelloWPF
                                        MessageBoxImage.Question);
             if (result == MessageBoxResult.Yes)
             {
-                _gameController.ResetBoard();
+                // Get game state after reset and render it
+                var resetState = _gameController.ResetGame();
+                RenderGameState(resetState);
+
+                // Recreate board to ensure clean state
                 CreateGameBoard();
+                RenderGameState(resetState);
             }
         }
 
@@ -223,23 +245,17 @@ namespace OthelloWPF
             {
                 if (_gameController != null)
                 {
-                    _gameController.Board.BoardChanged -= UpdateBoardDisplay;
-                    _gameController.PropertyChanged -= GameController_PropertyChanged;
                     _gameController.OnGameEnded -= OnGameEnded;
-                    _gameController.OnTurnChanged -= OnTurnChanged;
                 }
 
                 var player1 = new Player(dialog.Player1Name);
                 var player2 = new Player(dialog.Player2Name);
                 var blackPiece = new Piece(ColorType.Black);
                 var whitePiece = new Piece(ColorType.White);
+                var board = new Board();
 
-                _gameController = new GameController(player1, player2, blackPiece, whitePiece);
-
-                _gameController.Board.BoardChanged += UpdateBoardDisplay;
-                _gameController.PropertyChanged += GameController_PropertyChanged;
+                _gameController = new GameController(player1, player2, blackPiece, whitePiece, board);
                 _gameController.OnGameEnded += OnGameEnded;
-                _gameController.OnTurnChanged += OnTurnChanged;
 
                 this.DataContext = _gameController;
 
@@ -247,6 +263,11 @@ namespace OthelloWPF
                 Player2Name.Text = player2.UserName;
 
                 CreateGameBoard();
+
+                // Get initial game state and render it
+                var initialState = _gameController.GetCurrentGameState();
+                RenderGameState(initialState);
+
                 CurrentMessage.Text = "New players set! Click 'New Game' to start playing!";
             }
         }
@@ -263,6 +284,11 @@ namespace OthelloWPF
                           "• Valid moves are highlighted in light green\n" +
                           "• If you have no valid moves, your turn is skipped\n" +
                           "• Game ends when neither player can move\n\n" +
+                          "VISUAL INDICATORS:\n" +
+                          "• The current player's info box is highlighted with a colored border\n" +
+                          "• The turn indicator box changes color based on the current player\n" +
+                          "• Dark colors indicate Black player's turn\n" +
+                          "• Light colors indicate White player's turn\n\n" +
                           "CONTROLS:\n" +
                           "• Click on highlighted squares to make a move\n" +
                           "• Black pieces always go first\n" +

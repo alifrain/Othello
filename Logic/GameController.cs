@@ -7,7 +7,7 @@ namespace OthelloWPF
 {
     public class GameController : INotifyPropertyChanged
     {
-        private ObservableBoard _board; 
+        private Board _board;
         private Dictionary<IPlayer, IPiece> _players;
         private int[,] _directions;
         private IPlayer _currentPlayer;
@@ -18,12 +18,10 @@ namespace OthelloWPF
         public event Action<string>? OnGameEnded;
         public event Action<string>? OnTurnChanged;
 
-
-        public ObservableBoard Board => _board;
+        // Public properties for UI binding
         public IPlayer CurrentPlayer => _currentPlayer;
         public bool GameStarted => _gameStarted;
         public bool GameEnded => _gameEnded;
-
         public IPlayer Player1 => _players.Keys.First();
         public IPlayer Player2 => _players.Keys.Skip(1).First();
 
@@ -49,9 +47,9 @@ namespace OthelloWPF
             }
         }
 
-        public GameController(IPlayer player1, IPlayer player2, IPiece piece1, IPiece piece2)
+        public GameController(IPlayer player1, IPlayer player2, IPiece piece1, IPiece piece2, Board board)
         {
-            _board = new ObservableBoard(); 
+            _board = board;
             _players = new Dictionary<IPlayer, IPiece>
             {
                 { player1, piece1 },
@@ -70,7 +68,108 @@ namespace OthelloWPF
             _gameEnded = false;
         }
 
-        public void StartGame()
+        // Main method that UI calls - returns the current board state after processing move
+        public GameMoveResult ProcessMove(int row, int col)
+        {
+            var result = new GameMoveResult();
+
+            if (_gameEnded || !_gameStarted)
+            {
+                result.IsValidMove = false;
+                result.Message = "Game not started or already ended";
+                result.Board = GetCurrentBoardState();
+                result.ValidMoves = new List<Position>();
+                result.CurrentPlayer = _currentPlayer;
+                result.GameEnded = _gameEnded;
+                return result;
+            }
+
+            var position = new Position(row, col);
+
+            if (!_validMoves.Contains(position))
+            {
+                result.IsValidMove = false;
+                result.Message = $"Invalid move! Position ({row},{col}) is not valid.";
+                result.Board = GetCurrentBoardState();
+                result.ValidMoves = _validMoves;
+                result.CurrentPlayer = _currentPlayer;
+                result.GameEnded = _gameEnded;
+                return result;
+            }
+
+            // Apply the move
+            ApplyMove(position, new Dictionary<IPlayer, IPiece> { { _currentPlayer, _players[_currentPlayer] } });
+            UpdateScore();
+
+            // Check if game is over
+            if (IsGameOver())
+            {
+                EndGame();
+                result.IsValidMove = true;
+                result.Message = CurrentMessage;
+                result.Board = GetCurrentBoardState();
+                result.ValidMoves = new List<Position>();
+                result.CurrentPlayer = _currentPlayer;
+                result.GameEnded = true;
+                return result;
+            }
+
+            // Switch turns and update valid moves
+            SwitchTurn();
+            UpdateValidMoves();
+
+            // Handle case where current player has no valid moves
+            if (_validMoves.Count == 0)
+            {
+                CurrentMessage = $"No valid moves for {_currentPlayer.UserName}. Skipping turn.";
+                SwitchTurn();
+                UpdateValidMoves();
+
+                if (_validMoves.Count == 0)
+                {
+                    EndGame();
+                    result.IsValidMove = true;
+                    result.Message = CurrentMessage;
+                    result.Board = GetCurrentBoardState();
+                    result.ValidMoves = new List<Position>();
+                    result.CurrentPlayer = _currentPlayer;
+                    result.GameEnded = true;
+                    return result;
+                }
+            }
+
+            // Move was successful
+            CurrentMessage = $"{_currentPlayer.UserName}'s turn";
+            OnTurnChanged?.Invoke($"{_currentPlayer.UserName}'s turn ({_players[_currentPlayer].Color})");
+
+            result.IsValidMove = true;
+            result.Message = CurrentMessage;
+            result.Board = GetCurrentBoardState();
+            result.ValidMoves = _validMoves;
+            result.CurrentPlayer = _currentPlayer;
+            result.GameEnded = false;
+
+            return result;
+        }
+
+        // Method to get current board state without making a move
+        public GameMoveResult GetCurrentGameState()
+        {
+            var result = new GameMoveResult
+            {
+                IsValidMove = true, 
+                Message = CurrentMessage,
+                Board = GetCurrentBoardState(),
+                ValidMoves = _validMoves,
+                CurrentPlayer = _currentPlayer,
+                GameEnded = _gameEnded
+            };
+
+            return result;
+        }
+
+        // Start a new game and return initial state
+        public GameMoveResult StartGame()
         {
             _gameStarted = true;
             _gameEnded = false;
@@ -83,59 +182,69 @@ namespace OthelloWPF
 
             OnPropertyChanged(nameof(GameStarted));
             OnPropertyChanged(nameof(GameEnded));
+
+            var result = new GameMoveResult
+            {
+                IsValidMove = true,
+                Message = CurrentMessage,
+                Board = GetCurrentBoardState(),
+                ValidMoves = _validMoves,
+                CurrentPlayer = _currentPlayer,
+                GameEnded = false
+            };
+
+            return result;
         }
 
-        public bool MakeMove(int row, int col)
+        // Reset game and return initial state
+        public GameMoveResult ResetGame()
         {
-            if (_gameEnded || !_gameStarted)
-                return false;
-
-            var position = new Position(row, col);
-
-            if (!_validMoves.Contains(position))
+            _board.ResetBoard();
+            foreach (var player in _players.Keys)
             {
-                CurrentMessage = $"Invalid move! Position ({row},{col}) is not valid.";
-                return false;
+                player.Score = 2;
             }
+            _currentPlayer = _players.Keys.First();
+            _gameStarted = false;
+            _gameEnded = false;
+            _validMoves.Clear();
+            CurrentMessage = "Game reset. Click 'New Game' to start.";
 
-            ApplyMove(position, new Dictionary<IPlayer, IPiece> { { _currentPlayer, _players[_currentPlayer] } });
+            OnPropertyChanged(nameof(GameStarted));
+            OnPropertyChanged(nameof(GameEnded));
+            OnPropertyChanged(nameof(CurrentPlayer));
+            OnPropertyChanged(nameof(Player1));
+            OnPropertyChanged(nameof(Player2));
 
-            UpdateScore();
-
-            if (IsGameOver())
+            var result = new GameMoveResult
             {
-                EndGame();
-                return true;
-            }
+                IsValidMove = true,
+                Message = CurrentMessage,
+                Board = GetCurrentBoardState(),
+                ValidMoves = new List<Position>(),
+                CurrentPlayer = _currentPlayer,
+                GameEnded = false
+            };
 
-            SwitchTurn();
-            UpdateValidMoves();
+            return result;
+        }
 
-            if (_validMoves.Count == 0)
+        // Helper method to get current board state as a clean 2D array
+        private ColorType[,] GetCurrentBoardState()
+        {
+            var boardState = new ColorType[8, 8];
+            for (int row = 0; row < 8; row++)
             {
-                CurrentMessage = $"No valid moves for {_currentPlayer.UserName}. Skipping turn.";
-                SwitchTurn();
-                UpdateValidMoves();
-
-                if (_validMoves.Count == 0)
+                for (int col = 0; col < 8; col++)
                 {
-                    EndGame();
-                    return true;
+                    boardState[row, col] = _board.Grid[row, col].Color;
                 }
             }
-
-            CurrentMessage = $"{_currentPlayer.UserName}'s turn";
-            OnTurnChanged?.Invoke($"{_currentPlayer.UserName}'s turn ({_players[_currentPlayer].Color})");
-
-            return true;
+            return boardState;
         }
 
-        public bool IsValidMove(int row, int col)
-        {
-            return _validMoves.Contains(new Position(row, col));
-        }
-
-        public void UpdateScore()
+        // Original private methods remain mostly unchanged
+        private void UpdateScore()
         {
             foreach (var player in _players.Keys)
             {
@@ -162,7 +271,7 @@ namespace OthelloWPF
             ValidMoves = GetValidMoves(_board, new Dictionary<IPlayer, IPiece> { { _currentPlayer, _players[_currentPlayer] } });
         }
 
-        public List<Position> GetValidMoves(IBoard board, Dictionary<IPlayer, IPiece> player)
+        private List<Position> GetValidMoves(IBoard board, Dictionary<IPlayer, IPiece> player)
         {
             var validMoves = new List<Position>();
             var playerPiece = player.Values.First();
@@ -185,7 +294,7 @@ namespace OthelloWPF
             return validMoves;
         }
 
-        public List<Position> GetFlippedPositions(IBoard board, int row, int col, Dictionary<IPlayer, IPiece> player)
+        private List<Position> GetFlippedPositions(IBoard board, int row, int col, Dictionary<IPlayer, IPiece> player)
         {
             var flippedPositions = new List<Position>();
             var playerColor = player.Values.First().Color;
@@ -216,14 +325,7 @@ namespace OthelloWPF
             return flippedPositions;
         }
 
-        public Dictionary<IPlayer, IPiece> GetOpponent(Dictionary<IPlayer, IPiece> player)
-        {
-            var currentPlayerKey = player.Keys.First();
-            var opponent = _players.Keys.First(p => p != currentPlayerKey);
-            return new Dictionary<IPlayer, IPiece> { { opponent, _players[opponent] } };
-        }
-
-        public void ApplyMove(Position pos, Dictionary<IPlayer, IPiece> player)
+        private void ApplyMove(Position pos, Dictionary<IPlayer, IPiece> player)
         {
             var playerPiece = player.Values.First();
             var flippedPositions = GetFlippedPositions(_board, pos.Row, pos.Col, player);
@@ -234,42 +336,15 @@ namespace OthelloWPF
             {
                 _board[flipPos.Row, flipPos.Col] = new Piece(playerPiece.Color);
             }
-
         }
 
-        public void SwitchTurn()
+        private void SwitchTurn()
         {
             _currentPlayer = _players.Keys.First(p => p != _currentPlayer);
             OnPropertyChanged(nameof(CurrentPlayer));
         }
 
-        public IBoard GetBoard()
-        {
-            return _board;
-        }
-
-        public void ResetBoard()
-        {
-            _board.ResetBoard(); 
-            foreach (var player in _players.Keys)
-            {
-                player.Score = 2;
-            }
-            _currentPlayer = _players.Keys.First();
-            _gameStarted = false;
-            _gameEnded = false;
-            _validMoves.Clear();
-            CurrentMessage = "Game reset. Click 'New Game' to start.";
-
-            OnPropertyChanged(nameof(GameStarted));
-            OnPropertyChanged(nameof(GameEnded));
-            OnPropertyChanged(nameof(CurrentPlayer));
-            OnPropertyChanged(nameof(Player1));
-            OnPropertyChanged(nameof(Player2));
-            // Board will automatically notify UI through data binding
-        }
-
-        public void EndGame()
+        private void EndGame()
         {
             _gameEnded = true;
             UpdateScore();
@@ -339,5 +414,16 @@ namespace OthelloWPF
         {
             return _validMoves.Contains(new Position(row, col));
         }
+    }
+
+    // New result class to encapsulate all game state information
+    public class GameMoveResult
+    {
+        public bool IsValidMove { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public ColorType[,] Board { get; set; } = new ColorType[8, 8];
+        public List<Position> ValidMoves { get; set; } = new List<Position>();
+        public IPlayer CurrentPlayer { get; set; }
+        public bool GameEnded { get; set; }
     }
 }

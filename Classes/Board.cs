@@ -1,29 +1,73 @@
-using OthelloWPF;
+﻿using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
-public class Board : IBoard
+namespace OthelloWPF
 {
-    public IPiece[,] Grid { get; set; }
-
-    public Board()
+    public class Board : IBoard, INotifyPropertyChanged
     {
-        Grid = new IPiece[8, 8];
-        InitializeBoard();
-    }
+        private IPiece[,] _grid;
 
-    private void InitializeBoard()
-    {
-        for (int row = 0; row < 8; row++)
+        public IPiece[,] Grid
         {
-            for (int col = 0; col < 8; col++)
+            get => _grid;
+            private set
             {
-                Grid[row, col] = new Piece(ColorType.None);
+                _grid = value;
+                OnPropertyChanged();
             }
         }
 
-        Grid[3, 3] = new Piece(ColorType.White);
-        Grid[3, 4] = new Piece(ColorType.Black);
-        Grid[4, 3] = new Piece(ColorType.Black);
-        Grid[4, 4] = new Piece(ColorType.White);
+        public IPiece this[int row, int col]
+        {
+            get => _grid[row, col];
+            set
+            {
+                if (_grid[row, col]?.Color != value?.Color)
+                {
+                    _grid[row, col] = value;
+                    OnPropertyChanged($"Item[{row},{col}]");
+                    OnPropertyChanged(nameof(Grid));
+                    BoardChanged?.Invoke();
+                }
+            }
+        }
 
+        public event PropertyChangedEventHandler? PropertyChanged;
+        public event System.Action? BoardChanged;
+
+        public Board()
+        {
+            InitializeBoard();
+        }
+
+        private void InitializeBoard()
+        {
+            _grid = new IPiece[8, 8];
+
+            for (int row = 0; row < 8; row++)
+            {
+                for (int col = 0; col < 8; col++)
+                {
+                    _grid[row, col] = new Piece(ColorType.None);
+                }
+            }
+
+            _grid[3, 3] = new Piece(ColorType.White);
+            _grid[3, 4] = new Piece(ColorType.Black);
+            _grid[4, 3] = new Piece(ColorType.Black);
+            _grid[4, 4] = new Piece(ColorType.White);
+        }
+
+        public void ResetBoard()
+        {
+            InitializeBoard();
+            OnPropertyChanged(nameof(Grid));
+            BoardChanged?.Invoke();
+        }
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 }
