@@ -2,7 +2,7 @@ using OthelloWPF;
 
 public class Board : IBoard
 {
-    public IPiece[,] Grid { get; }
+    public IPiece[,] Grid { get; set; }
 
     public Board()
     {

@@ -30,10 +30,12 @@ namespace OthelloWPF
                 var whitePiece = new Piece(ColorType.White);
 
                 _gameController = new GameController(player1, player2, blackPiece, whitePiece);
-
-                _gameController.OnBoardUpdated += UpdateBoardDisplay;
+                _gameController.Board.BoardChanged += UpdateBoardDisplay;
+                _gameController.PropertyChanged += GameController_PropertyChanged;
                 _gameController.OnGameEnded += OnGameEnded;
                 _gameController.OnTurnChanged += OnTurnChanged;
+
+                this.DataContext = _gameController;
 
                 Player1Name.Text = player1.UserName;
                 Player2Name.Text = player2.UserName;
@@ -50,9 +52,12 @@ namespace OthelloWPF
 
                 _gameController = new GameController(player1, player2, blackPiece, whitePiece);
 
-                _gameController.OnBoardUpdated += UpdateBoardDisplay;
+                _gameController.Board.BoardChanged += UpdateBoardDisplay;
+                _gameController.PropertyChanged += GameController_PropertyChanged;
                 _gameController.OnGameEnded += OnGameEnded;
                 _gameController.OnTurnChanged += OnTurnChanged;
+
+                this.DataContext = _gameController;
 
                 Player1Name.Text = "Player 1";
                 Player2Name.Text = "Player 2";
@@ -82,7 +87,7 @@ namespace OthelloWPF
                     var button = new Button
                     {
                         Style = (Style)FindResource("BoardCellStyle"),
-                        Content = new Grid(), // Container for the piece
+                        Content = new Grid(),
                         Tag = new Position(row, col)
                     };
 
@@ -106,9 +111,18 @@ namespace OthelloWPF
                 _gameController.MakeMove(pos.Row, pos.Col);
             }
         }
+
+        private void GameController_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(_gameController.ValidMoves))
+            {
+                UpdateBoardDisplay();
+            }
+        }
+
         private void UpdateBoardDisplay()
         {
-            if (_gameController == null || _boardButtons == null) return;
+            if (_gameController?.Board == null || _boardButtons == null) return;
 
             for (int row = 0; row < BOARD_SIZE; row++)
             {
@@ -118,23 +132,23 @@ namespace OthelloWPF
                     var grid = (Grid)button.Content;
                     grid.Children.Clear();
 
-                    var pieceColor = _gameController.GetPieceColorAt(row, col);
+                    var piece = _gameController.Board.Grid[row, col];
 
-                    if (pieceColor != ColorType.None)
+                    if (piece.Color != ColorType.None)
                     {
-                        var piece = new Ellipse
+                        var pieceEllipse = new Ellipse
                         {
                             Style = (Style)FindResource("GamePieceStyle"),
-                            Fill = pieceColor == ColorType.Black ? Brushes.Black : Brushes.White
+                            Fill = piece.Color == ColorType.Black ? Brushes.Black : Brushes.White
                         };
 
-                        if (pieceColor == ColorType.White)
+                        if (piece.Color == ColorType.White)
                         {
-                            piece.Stroke = Brushes.Black;
-                            piece.StrokeThickness = 2;
+                            pieceEllipse.Stroke = Brushes.Black;
+                            pieceEllipse.StrokeThickness = 2;
                         }
 
-                        grid.Children.Add(piece);
+                        grid.Children.Add(pieceEllipse);
                     }
 
                     if (_gameController.IsHighlightedPosition(row, col))
@@ -152,13 +166,12 @@ namespace OthelloWPF
                     }
                     else
                     {
-                        button.Background = new SolidColorBrush(Color.FromRgb(34, 139, 34)); // Forest green
+                        button.Background = new SolidColorBrush(Color.FromRgb(34, 139, 34));
                     }
                 }
             }
 
             UpdateScoreDisplay();
-            CurrentMessage.Text = _gameController.CurrentMessage;
         }
 
         private void UpdateScoreDisplay()
@@ -183,7 +196,6 @@ namespace OthelloWPF
         {
             _gameController.ResetBoard();
             _gameController.StartGame();
-            UpdateBoardDisplay();
         }
 
         private void ExitButton_Click(object sender, RoutedEventArgs e)
@@ -209,6 +221,13 @@ namespace OthelloWPF
             var dialog = new PlayerNameDialog();
             if (dialog.ShowDialog() == true)
             {
+                if (_gameController != null)
+                {
+                    _gameController.Board.BoardChanged -= UpdateBoardDisplay;
+                    _gameController.PropertyChanged -= GameController_PropertyChanged;
+                    _gameController.OnGameEnded -= OnGameEnded;
+                    _gameController.OnTurnChanged -= OnTurnChanged;
+                }
 
                 var player1 = new Player(dialog.Player1Name);
                 var player2 = new Player(dialog.Player2Name);
@@ -217,10 +236,12 @@ namespace OthelloWPF
 
                 _gameController = new GameController(player1, player2, blackPiece, whitePiece);
 
-                _gameController.OnBoardUpdated += UpdateBoardDisplay;
+                _gameController.Board.BoardChanged += UpdateBoardDisplay;
+                _gameController.PropertyChanged += GameController_PropertyChanged;
                 _gameController.OnGameEnded += OnGameEnded;
                 _gameController.OnTurnChanged += OnTurnChanged;
 
+                this.DataContext = _gameController;
 
                 Player1Name.Text = player1.UserName;
                 Player2Name.Text = player2.UserName;
