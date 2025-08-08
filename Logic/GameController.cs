@@ -18,7 +18,6 @@ namespace OthelloWPF
         public event Action<string>? OnGameEnded;
         public event Action<string>? OnTurnChanged;
 
-        // Public properties for UI binding
         public IPlayer CurrentPlayer => _currentPlayer;
         public bool GameStarted => _gameStarted;
         public bool GameEnded => _gameEnded;
@@ -68,7 +67,7 @@ namespace OthelloWPF
             _gameEnded = false;
         }
 
-        // Main method that UI calls - returns the current board state after processing move
+        // Selalu mereturn the current board state setelah move
         public GameMoveResult ProcessMove(int row, int col)
         {
             var result = new GameMoveResult();
@@ -97,11 +96,9 @@ namespace OthelloWPF
                 return result;
             }
 
-            // Apply the move
             ApplyMove(position, new Dictionary<IPlayer, IPiece> { { _currentPlayer, _players[_currentPlayer] } });
             UpdateScore();
 
-            // Check if game is over
             if (IsGameOver())
             {
                 EndGame();
@@ -118,7 +115,6 @@ namespace OthelloWPF
             SwitchTurn();
             UpdateValidMoves();
 
-            // Handle case where current player has no valid moves
             if (_validMoves.Count == 0)
             {
                 CurrentMessage = $"No valid moves for {_currentPlayer.UserName}. Skipping turn.";
